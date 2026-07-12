@@ -1,0 +1,72 @@
+{
+  "name": "@ltron/deepfield",
+  "version": "0.1.0",
+  "description": "A zoomable WebGL2 map for any hierarchy — dive from roots through branches to individual leaves, with continuous semantic-zoom cross-fade.",
+  "keywords": [
+    "webgl",
+    "webgl2",
+    "visualization",
+    "hierarchy",
+    "treemap",
+    "semantic-zoom",
+    "knowledge-map",
+    "circle-packing",
+    "dataviz"
+  ],
+  "license": "MIT",
+  "author": "Lokesh",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LokeshVyavhare/ltron-deepfield.git"
+  },
+  "homepage": "https://github.com/LokeshVyavhare/ltron-deepfield#readme",
+  "bugs": {
+    "url": "https://github.com/LokeshVyavhare/ltron-deepfield/issues"
+  },
+  "type": "module",
+  "sideEffects": [
+    "*.css"
+  ],
+  "main": "./dist/deepfield.cjs",
+  "module": "./dist/deepfield.js",
+  "types": "./types/index.d.ts",
+  "unpkg": "./dist/deepfield.global.js",
+  "exports": {
+    ".": {
+      "types": "./types/index.d.ts",
+      "import": "./dist/deepfield.js",
+      "require": "./dist/deepfield.cjs"
+    },
+    "./layout": {
+      "types": "./types/layout.d.ts",
+      "import": "./dist/layout.js",
+      "require": "./dist/layout.cjs"
+    },
+    "./style.css": "./dist/deepfield.css",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "types",
+    "src",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node --test",
+    "prepublishOnly": "npm run build && npm test",
+    "example": "npm run build && node -e \"console.log('open examples/filesystem.html')\""
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.1",
+    "playwright": "^1.61.1"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

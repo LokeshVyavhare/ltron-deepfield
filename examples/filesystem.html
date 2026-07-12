@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Deepfield — file tree example</title>
+  <link rel="stylesheet" href="../dist/deepfield.css" />
+  <style>
+    body { margin: 0; padding: 24px; background: #0b0e13; color: #e6e9ef;
+           font: 14px/1.5 system-ui, sans-serif; }
+    h1 { font-size: 18px; margin: 0 0 4px; }
+    p  { color: #8b93a3; margin: 0 0 16px; }
+    #map { height: 78vh; }
+  </style>
+</head>
+<body>
+  <h1>Deepfield — a source tree</h1>
+  <p>
+    Not a news corpus: just file paths. No backend, no embeddings — geometry is computed in
+    the browser by <code>layout()</code>. Scroll to zoom, drag to pan, click to open.
+  </p>
+  <div id="map"></div>
+
+  <script src="../dist/deepfield.global.js"></script>
+  <script>
+    // A plausible repo. In real use this is `git ls-files`, a bucket listing, an org chart —
+    // anything with a hierarchy and a size.
+    const FILES = [
+      ["src/api/routes/users.ts", 320], ["src/api/routes/orders.ts", 780],
+      ["src/api/routes/auth.ts", 210], ["src/api/middleware/cors.ts", 60],
+      ["src/api/middleware/rateLimit.ts", 140], ["src/api/server.ts", 190],
+      ["src/db/schema.sql", 450], ["src/db/migrations/001_init.sql", 120],
+      ["src/db/migrations/002_orders.sql", 95], ["src/db/client.ts", 210],
+      ["src/ui/components/Button.tsx", 80], ["src/ui/components/Table.tsx", 340],
+      ["src/ui/components/Modal.tsx", 160], ["src/ui/components/Chart.tsx", 520],
+      ["src/ui/pages/Dashboard.tsx", 610], ["src/ui/pages/Settings.tsx", 230],
+      ["src/ui/theme.css", 140], ["src/lib/date.ts", 70], ["src/lib/money.ts", 110],
+      ["src/lib/retry.ts", 90], ["src/lib/log.ts", 130],
+      ["tests/api/users.test.ts", 180], ["tests/api/orders.test.ts", 260],
+      ["tests/ui/Table.test.tsx", 150], ["tests/lib/money.test.ts", 90],
+      ["docs/architecture.md", 400], ["docs/onboarding.md", 220],
+      ["docs/adr/001-storage.md", 130], ["docs/adr/002-auth.md", 110],
+    ];
+
+    // fromPaths() invents the intermediate directory nodes; layout() does the geometry.
+    // Weight = file size, so big files get big discs and directories size to their contents.
+    const roots = Deepfield.fromPaths(
+      FILES.map(([path, bytes]) => ({ path, bytes, label: path.split("/").pop() }))
+    );
+
+    const data = Deepfield.layout(roots, {
+      levels: ["top", "dir", "group", "file"],
+      weight: (node) => node.bytes || 1,
+      maxChildren: 8,
+    });
+
+    new Deepfield.Deepfield(document.getElementById("map"), {
+      data,
+      levels: ["top", "dir", "group", "file"],
+      strings: {
+        searchPlaceholder: "Find a file…",
+        help: "scroll = zoom · drag = pan · click = inspect",
+        descend: "⤓ Open",
+      },
+      tooltip: (n) => `${n.label} · ${n.weight} lines`,
+      details: (node) => ({
+        title: node.label,
+        subtitle: node.lineage,
+        footer: `${node.weight} lines · ${node.level}`,
+        items: [],
+      }),
+    });
+  </script>
+</body>
+</html>

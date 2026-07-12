@@ -1,0 +1,162 @@
+/* Deepfield — self-contained styles. Every value is a CSS custom property so a host can
+   restyle the map without forking this file:
+
+     .df-wrap { --df-accent: #f0b; --df-bg: #fff; }
+
+   Nothing here depends on a host stylesheet, and every selector is `df-` prefixed. */
+
+.df-wrap {
+  --df-bg: radial-gradient(120% 120% at 50% 0%, #10161f, #0b0e13);
+  --df-panel: #171a21;
+  --df-panel-2: #1f232c;
+  --df-border: #2a2f3a;
+  --df-text: #e6e9ef;
+  --df-muted: #8b93a3;
+  --df-accent: #4da3ff;
+  --df-radius: 14px;
+
+  position: relative;
+  height: 100%;
+  min-height: 320px;
+  overflow: hidden;
+  background: var(--df-bg);
+  border: 1px solid var(--df-border);
+  border-radius: var(--df-radius);
+  color: var(--df-text);
+  font-family: inherit;
+}
+.df-wrap:fullscreen { width: 100vw; height: 100vh; margin: 0; border: none; border-radius: 0; }
+
+.df-canvas { width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
+.df-canvas:active { cursor: grabbing; }
+
+/* --- labels --------------------------------------------------------------- */
+.df-labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.df-label {
+  position: absolute; top: 0; left: 0; transform: translate(-1000px, -1000px);
+  color: var(--df-text); font-weight: 600; font-size: 12px; white-space: nowrap;
+  text-shadow: 0 1px 4px #000, 0 0 12px rgba(0, 0, 0, .9);
+  opacity: 0; transition: opacity .15s;
+  width: 80px; margin-left: -40px; text-align: center;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.df-label.df-l0 { font-size: 16px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; width: 160px; margin-left: -80px; }
+.df-label.df-l1 { font-size: 13px; font-weight: 700; width: 130px; margin-left: -65px; }
+.df-label.df-l2 { font-size: 12px; color: var(--df-muted); width: 120px; margin-left: -60px; }
+.df-label.df-l3 { font-size: 11px; color: #cdd5e0; font-weight: 500; width: 180px; margin-left: -90px; }
+.df-label.df-l4,
+.df-label.df-l5 { font-size: 11px; color: #cdd5e0; font-weight: 500; width: 180px; margin-left: -90px; }
+
+/* --- HUD ------------------------------------------------------------------- */
+.df-hud {
+  position: absolute; top: 12px; left: 12px; right: 12px; z-index: 4;
+  display: flex; flex-direction: column; gap: 8px; pointer-events: none;
+}
+.df-hud-row { display: flex; gap: 8px; align-items: center; }
+.df-group, .df-search {
+  pointer-events: auto; background: rgba(23, 26, 33, .92); color: var(--df-text);
+  border: 1px solid var(--df-border); border-radius: 10px; padding: 8px 10px;
+  font-size: 13px; font-family: inherit;
+}
+.df-group { max-width: 190px; }
+.df-group:focus, .df-search:focus { outline: none; border-color: var(--df-accent); }
+.df-searchbox { position: relative; flex: 1; max-width: 340px; pointer-events: auto; }
+.df-search { width: 100%; padding: 8px 12px; }
+.df-results {
+  position: absolute; top: 100%; left: 0; right: 0; margin-top: 4px; z-index: 6;
+  background: var(--df-panel); border: 1px solid var(--df-border);
+  border-radius: 10px; overflow: hidden;
+}
+.df-results:empty { display: none; }
+.df-hit {
+  padding: 7px 12px; font-size: 13px; cursor: pointer;
+  display: flex; justify-content: space-between; gap: 8px;
+}
+.df-hit:hover { background: var(--df-panel-2); }
+
+.df-crumb {
+  pointer-events: auto; font-size: 12px; color: var(--df-muted);
+  font-variant-numeric: tabular-nums;
+  display: flex; flex-wrap: wrap; gap: 4px; align-items: center;
+}
+.df-crumb-link { color: var(--df-accent); cursor: pointer; }
+.df-crumb-link:hover { text-decoration: underline; }
+.df-crumb-sep { opacity: .5; }
+
+/* --- controls --------------------------------------------------------------- */
+.df-home, .df-fs {
+  position: absolute; top: 12px; z-index: 7; width: 36px; height: 36px;
+  background: rgba(23, 26, 33, .92); border: 1px solid var(--df-border);
+  color: var(--df-muted); border-radius: 10px; font-size: 17px; cursor: pointer;
+}
+.df-fs { right: 12px; }
+.df-home { right: 56px; }
+.df-home:hover, .df-fs:hover { color: #fff; border-color: var(--df-accent); }
+
+.df-help {
+  position: absolute; bottom: 10px; right: 14px; z-index: 4;
+  font-size: 11px; color: var(--df-muted); pointer-events: none;
+}
+
+.df-void {
+  position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); z-index: 6;
+  background: rgba(23, 26, 33, .94); border: 1px solid var(--df-border);
+  border-radius: 12px; padding: 14px 18px; color: var(--df-muted); font-size: 14px;
+  display: flex; align-items: center; gap: 10px; pointer-events: auto;
+}
+.df-void[hidden] { display: none; }
+
+.df-tip {
+  position: absolute; display: none; z-index: 8;
+  background: #000; color: #fff; font-size: 12px;
+  padding: 3px 8px; border-radius: 6px; pointer-events: none; white-space: nowrap;
+}
+
+/* --- panel ------------------------------------------------------------------ */
+/* Lives INSIDE .df-wrap on purpose: a panel parented to document.body vanishes when the
+   wrap goes :fullscreen, and re-hosting it on every fullscreen change is a bug farm. */
+.df-panel {
+  position: absolute; inset: 0; z-index: 9;
+  background: rgba(0, 0, 0, .45);
+  display: none;
+}
+.df-panel.df-open { display: block; }
+.df-panel-inner {
+  position: absolute; top: 0; right: 0; bottom: 0; width: min(420px, 100%);
+  background: var(--df-panel); border-left: 1px solid var(--df-border);
+  padding: 20px; overflow-y: auto;
+  animation: df-slide .18s ease-out;
+}
+@keyframes df-slide { from { transform: translateX(20px); opacity: 0; } to { transform: none; opacity: 1; } }
+.df-panel-inner h3 { margin: 0 0 6px; font-size: 18px; }
+.df-panel-actions { margin: 12px 0; }
+.df-x {
+  position: absolute; top: 12px; right: 12px;
+  background: none; border: none; color: var(--df-muted);
+  font-size: 16px; cursor: pointer;
+}
+.df-x:hover { color: var(--df-text); }
+.df-items { display: flex; flex-direction: column; gap: 2px; }
+.df-item {
+  padding: 8px 0; border-bottom: 1px solid var(--df-border);
+  font-size: 13px; display: flex; gap: 8px; align-items: baseline;
+}
+.df-item a { color: var(--df-text); text-decoration: none; }
+.df-item a:hover { color: var(--df-accent); text-decoration: underline; }
+.df-pill {
+  font-size: 10px; padding: 1px 6px; border-radius: 999px;
+  background: var(--df-panel-2); color: var(--df-muted);
+}
+
+/* --- shared bits -------------------------------------------------------------- */
+.df-btn {
+  background: var(--df-panel-2); border: 1px solid var(--df-border); color: var(--df-text);
+  border-radius: 8px; padding: 7px 12px; font-size: 13px; font-family: inherit; cursor: pointer;
+}
+.df-btn:hover { border-color: var(--df-accent); }
+.df-btn.df-primary { background: var(--df-accent); border-color: var(--df-accent); color: #06101c; font-weight: 600; }
+.df-muted { color: var(--df-muted); font-size: 12px; }
+.df-loading { color: var(--df-muted); padding: 20px 0; }
+.df-empty { padding: 28px; text-align: center; color: var(--df-muted); }
+.df-empty-title { font-size: 15px; color: var(--df-text); margin-bottom: 4px; }
+.df-empty-hint { font-size: 13px; }
