@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Deepfield — a zoomable WebGL2 map for any hierarchy</title>
+  <meta name="description" content="Deepfield: a zero-dependency WebGL2 map for any hierarchy. Scroll to dive from roots to leaves with a continuous semantic-zoom cross-fade." />
+  <link rel="stylesheet" href="vendor/deepfield.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-inner">
+      <p class="eyebrow">@ltron/deepfield</p>
+      <h1>A zoomable WebGL2 map for <em>any hierarchy</em>.</h1>
+      <p class="tagline">
+        Scroll to dive from roots, through branches, down to individual leaves — with a
+        continuous cross-fade between levels instead of discrete drill-down clicks. Zero
+        runtime dependencies. ~28&nbsp;kB minified. Renders 10k+ nodes on the GPU.
+      </p>
+      <div class="hero-actions">
+        <div class="install">
+          <code id="install-cmd">npm install @ltron/deepfield</code>
+          <button id="copy-install" type="button">Copy</button>
+        </div>
+        <a class="btn" href="https://github.com/LokeshVyavhare/ltron-deepfield" target="_blank" rel="noopener">GitHub</a>
+        <a class="btn" href="https://www.npmjs.com/package/@ltron/deepfield" target="_blank" rel="noopener">npm</a>
+      </div>
+      <ul class="features">
+        <li>Zero runtime dependencies</li>
+        <li>WebGL2 — 10k+ nodes on the GPU</li>
+        <li>Deterministic layout, every time</li>
+        <li>Continuous semantic-zoom cross-fade</li>
+      </ul>
+    </div>
+  </header>
+
+  <main class="demo">
+    <div id="map" class="demo-map" aria-label="Live Deepfield demo"></div>
+
+    <aside class="panel" id="panel">
+      <h2>Configure the map</h2>
+
+      <section class="panel-section">
+        <label for="dataset-select">Dataset</label>
+        <select id="dataset-select"></select>
+      </section>
+
+      <section class="panel-section" id="custom-json-section" hidden>
+        <label for="custom-json">Your data <span class="hint">{label, children, weight?}</span></label>
+        <textarea id="custom-json" rows="9" spellcheck="false"></textarea>
+        <button id="apply-json" type="button" class="btn-block">Apply</button>
+        <p class="error" id="json-error" hidden></p>
+      </section>
+
+      <section class="panel-section">
+        <h3>Appearance</h3>
+        <label class="row">
+          <span>Colour by</span>
+          <select id="hue-mode">
+            <option value="group">Group</option>
+            <option value="single">Single hue</option>
+          </select>
+        </label>
+        <label class="row" id="hue-slider-row" hidden>
+          <span>Hue</span>
+          <input type="range" id="hue-slider" min="0" max="360" step="1" value="200" />
+        </label>
+        <label class="row">
+          <span>Background</span>
+          <input type="color" id="bg-color" value="#0e1015" />
+        </label>
+        <label class="row">
+          <span>Disc size</span>
+          <input type="range" id="disc-scale" min="0.2" max="0.9" step="0.05" value="0.5" />
+        </label>
+        <label class="row">
+          <span>Leaf size</span>
+          <input type="range" id="leaf-size" min="0.05" max="0.3" step="0.01" value="0.13" />
+        </label>
+      </section>
+
+      <section class="panel-section">
+        <h3>Behaviour</h3>
+        <label class="row">
+          <span>Group density</span>
+          <input type="range" id="max-children" min="3" max="20" step="1" value="9" />
+        </label>
+        <label class="row check">
+          <input type="checkbox" id="group-filter-toggle" checked />
+          <span>Group filter dropdown</span>
+        </label>
+        <label class="row check">
+          <input type="checkbox" id="search-toggle" checked />
+          <span>Search box</span>
+        </label>
+      </section>
+    </aside>
+  </main>
+
+  <section class="how">
+    <h2>How it works</h2>
+    <div class="cards">
+      <div class="card">
+        <h3>Semantic-zoom bands</h3>
+        <p>
+          Every node declares <code>s_min / s_opt / s_max</code> — the zoom range it's worth
+          showing. The GPU cross-fades discs in and out through a smoothstep trapezoid every
+          frame, so there's no viewport fetching and no scene graph: the whole map uploads once
+          and the shader decides what's visible.
+        </p>
+      </div>
+      <div class="card">
+        <h3>Deterministic layout</h3>
+        <p>
+          No RNG, fixed iteration counts, sorted children. <code>layout()</code> sizes siblings
+          by weight (area-proportional radius) and places them by PCA-projected similarity when
+          you supply embeddings — otherwise a golden-angle spiral. The same input always
+          produces the same map.
+        </p>
+      </div>
+      <div class="card">
+        <h3>Two ways in</h3>
+        <p>Hand over a hierarchy and let the browser compute geometry:</p>
+        <pre><code>const data = layout(roots, { weight: n =&gt; n.size });
+new Deepfield(el, { data });</code></pre>
+        <p>…or skip <code>layout()</code> and ship precomputed geometry from your backend:</p>
+        <pre><code>new Deepfield(el, {
+  data: await fetch("/map").then(r =&gt; r.json()),
+});</code></pre>
+      </div>
+      <div class="card">
+        <h3>Zero dependencies</h3>
+        <p>
+          ESM, CJS and a plain IIFE build, no bundler required —
+          <code>&lt;script src="deepfield.global.js"&gt;</code> defines
+          <code>window.Deepfield</code> and just works.
+        </p>
+      </div>
+    </div>
+    <p class="readme-link">
+      <a href="https://github.com/LokeshVyavhare/ltron-deepfield#readme" target="_blank" rel="noopener">
+        Read the full documentation on GitHub →
+      </a>
+    </p>
+  </section>
+
+  <footer class="site-footer">
+    <p>MIT licensed. <a href="https://github.com/LokeshVyavhare/ltron-deepfield" target="_blank" rel="noopener">Source on GitHub</a>.</p>
+  </footer>
+
+  <script src="vendor/deepfield.global.js"></script>
+  <script type="module" src="main.js"></script>
+</body>
+</html>

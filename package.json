@@ -57,7 +57,8 @@
     "build": "node build.mjs",
     "test": "node --test",
     "prepublishOnly": "npm run build && npm test",
-    "example": "npm run build && node -e \"console.log('open examples/filesystem.html')\""
+    "example": "npm run build && node -e \"console.log('open examples/filesystem.html')\"",
+    "playground:build": "npm run build && node playground/build.mjs"
   },
   "devDependencies": {
     "esbuild": "^0.28.1",
