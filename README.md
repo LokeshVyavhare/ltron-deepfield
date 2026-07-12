@@ -4,6 +4,8 @@ A zoomable WebGL2 map for **any hierarchy**. Scroll to dive from roots, through 
 
 Zero runtime dependencies. ~28 kB minified. Renders ~10k nodes on the GPU.
 
+**[Live demo / playground →](https://lokeshvyavhare.github.io/ltron-deepfield/)** — try it with the built-in sample datasets or paste your own hierarchy.
+
 ```bash
 npm install @ltron/deepfield
 ```
