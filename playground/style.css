@@ -74,6 +74,12 @@ a { color: var(--accent); }
 }
 .demo-map {
   height: min(72vh, 640px); min-height: 420px;
+  /* Without this, the canvas's own pixel-buffer size (which Deepfield sets from
+     devicePixelRatio) becomes the grid item's content-based minimum width, growing the
+     track past its 1fr share — which grows the canvas again on the next ResizeObserver
+     tick, and so on. min-width:0 stops content from dictating the track size. */
+  min-width: 0;
+  overflow: hidden;
 }
 .panel {
   background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
