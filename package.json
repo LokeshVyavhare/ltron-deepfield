@@ -1,6 +1,6 @@
 {
   "name": "@ltron/deepfield",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A zoomable WebGL2 map for any hierarchy — dive from roots through branches to individual leaves, with continuous semantic-zoom cross-fade.",
   "keywords": [
     "webgl",

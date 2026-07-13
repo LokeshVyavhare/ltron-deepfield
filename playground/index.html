@@ -14,9 +14,9 @@
       <p class="eyebrow">@ltron/deepfield</p>
       <h1>A zoomable WebGL2 map for <em>any hierarchy</em>.</h1>
       <p class="tagline">
-        Scroll to dive from roots, through branches, down to individual leaves — with a
-        continuous cross-fade between levels instead of discrete drill-down clicks. Zero
-        runtime dependencies. ~28&nbsp;kB minified. Renders 10k+ nodes on the GPU.
+        Scroll (or pinch) to dive from roots, through branches, down to individual leaves —
+        with a continuous cross-fade between levels instead of discrete drill-down clicks. Zero
+        runtime dependencies. ~30&nbsp;kB minified. Renders 10k+ nodes on the GPU.
       </p>
       <div class="hero-actions">
         <div class="install">
@@ -37,6 +37,12 @@
 
   <main class="demo">
     <div id="map" class="demo-map" aria-label="Live Deepfield demo"></div>
+
+    <!-- Small screens collapse the config into this toggle, so the map keeps the viewport.
+         Hidden (and irrelevant) on desktop, where the panel is always open beside the map. -->
+    <button class="panel-toggle" id="panel-toggle" type="button" aria-expanded="false" aria-controls="panel">
+      Configure the map
+    </button>
 
     <aside class="panel" id="panel">
       <h2>Configure the map</h2>

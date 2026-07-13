@@ -136,6 +136,15 @@ leafSize.addEventListener("input", () => {
   if (df) df.opts.theme.leafSizeFactor = Number(leafSize.value);
 });
 
+// --- config panel toggle (small screens only; the CSS hides the button above 860px) ---
+const panelEl = document.getElementById("panel");
+const panelToggle = document.getElementById("panel-toggle");
+panelToggle.addEventListener("click", () => {
+  const open = panelEl.classList.toggle("open");
+  panelToggle.setAttribute("aria-expanded", String(open));
+  if (open) panelEl.scrollIntoView({ behavior: "smooth", block: "start" });
+});
+
 // --- install snippet copy button ---
 document.getElementById("copy-install").addEventListener("click", async (e) => {
   const btn = e.currentTarget;

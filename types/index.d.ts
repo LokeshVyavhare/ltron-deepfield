@@ -102,7 +102,7 @@ export interface DeepfieldTheme {
 
 export type DeepfieldStrings = Partial<Record<
   | "allGroups" | "searchPlaceholder" | "groupTitle" | "home" | "fullscreen"
-  | "voidText" | "voidAction" | "help" | "loading" | "emptyTitle" | "emptyHint"
+  | "voidText" | "voidAction" | "help" | "helpTouch" | "loading" | "emptyTitle" | "emptyHint"
   | "noWebGL" | "noWebGLHint" | "shaderFailed" | "descend" | "noChildren" | "detailsFailed",
   string
 >>;

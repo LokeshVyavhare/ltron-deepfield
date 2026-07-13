@@ -2,7 +2,8 @@
 
 A zoomable WebGL2 map for **any hierarchy**. Scroll to dive from roots, through branches, down to individual leaves — with a continuous cross-fade between levels instead of discrete drill-down clicks.
 
-Zero runtime dependencies. ~28 kB minified. Renders ~10k nodes on the GPU.
+Zero runtime dependencies. ~30 kB minified. Renders ~10k nodes on the GPU. Works on touch:
+one finger pans, two fingers pinch-zoom about the point between them, a tap picks.
 
 **[Live demo / playground →](https://lokeshvyavhare.github.io/ltron-deepfield/)** — try it with the built-in sample datasets or paste your own hierarchy.
 
@@ -102,6 +103,8 @@ If you compute geometry yourself, hold to all three.
 ## Requirements
 
 WebGL2. The renderer degrades to a readable message where it's unavailable rather than throwing. `layout()` is pure JS and runs anywhere, including Node.
+
+Input is pointer-based, so mouse, pen and touch all go through one path. The canvas sets `touch-action: none` — that is what stops a mobile browser claiming the drag as a page scroll and the pinch as a page zoom. If you re-style the canvas, keep it.
 
 ## Development
 

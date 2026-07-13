@@ -81,6 +81,9 @@ export class Deepfield {
   _mount() {
     const { strings, theme } = this.opts;
     const el = this.el;
+    // A touch device has no wheel and no click, so the hint mustn't claim it does. Read once
+    // at mount: this decides copy, not layout — the CSS handles the responsive part.
+    const coarse = typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches;
 
     el.innerHTML = `<div class="df-wrap">
         <canvas class="df-canvas"></canvas>
@@ -99,7 +102,7 @@ export class Deepfield {
         <button class="df-fs" title="${esc(strings.fullscreen)}">⛶</button>
         <div class="df-void" hidden>${esc(strings.voidText)}
           <button class="df-btn">${esc(strings.voidAction)}</button></div>
-        <div class="df-help">${esc(strings.help)}</div>
+        <div class="df-help">${esc(coarse ? strings.helpTouch : strings.help)}</div>
         <div class="df-panel"><div class="df-panel-inner"></div></div>
       </div>`;
 
@@ -209,6 +212,20 @@ export class Deepfield {
     this._home = home;
 
     // --- input ------------------------------------------------------------------
+    // Mouse, pen and touch all arrive as pointer events, so one code path serves them all:
+    // one pointer down pans, two pinch. `touch-action: none` on the canvas (see the CSS) is
+    // what stops the browser eating the gesture as a page scroll or a page pinch-zoom.
+    const clampZ = (z) => Math.max(Z_MIN, Math.min(Z_MAX, z));
+    // Pointer position in device px, relative to the canvas — the space vis.px/vis.py live in.
+    const at = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      return [(e.clientX - rect.left) * dpr, (e.clientY - rect.top) * dpr];
+    };
+    const worldAt = (mx, my) => {
+      const s = scaleOf();
+      return [cam.x + (mx - W / 2) / s, cam.y + (my - H / 2) / s];
+    };
+
     // Cursor-anchored zoom: remember the world point under the cursor once per gesture,
     // then RE-derive the camera from it every frame, so smoothing never drifts.
     // MAGNETIC DIVE: when zooming in, pull the anchor toward the nearest visible node.
@@ -218,11 +235,9 @@ export class Deepfield {
       e.preventDefault();
       cam.fly = null;
       const zoomingIn = e.deltaY < 0;
-      cam.zTarget = Math.max(Z_MIN, Math.min(Z_MAX, cam.zTarget - e.deltaY * 0.0017));
-      const rect = canvas.getBoundingClientRect();
-      const mx = (e.clientX - rect.left) * dpr, my = (e.clientY - rect.top) * dpr;
-      const s = scaleOf();
-      let wx = cam.x + (mx - W / 2) / s, wy = cam.y + (my - H / 2) / s;
+      cam.zTarget = clampZ(cam.zTarget - e.deltaY * 0.0017);
+      const [mx, my] = at(e);
+      let [wx, wy] = worldAt(mx, my);
       if (zoomingIn && vis.count) {
         let best = -1, bd = Infinity;
         for (let k = 0; k < vis.count; k++) {
@@ -241,27 +256,106 @@ export class Deepfield {
     };
     canvas.addEventListener("wheel", onWheel, { passive: false });
 
-    let drag = null;
+    const pointers = new Map();   // pointerId -> client position, every finger/button down on us
+    let drag = null;              // one-pointer pan, and the tap candidate that goes with it
+    let pinch = null;             // two-pointer gesture: the finger spread we last saw
+
+    // A tap is a press that neither travelled nor lingered. Fingers are imprecise, so the
+    // slop is far wider than a mouse needs; a mouse click sits well inside it either way.
+    const TAP_SLOP = 10;   // CSS px
+    const TAP_MS = 600;
+
+    // Centroid + spread of the first two pointers, in device px.
+    const spread = () => {
+      const [a, b] = [...pointers.values()];
+      if (!b) return null;
+      const rect = canvas.getBoundingClientRect();
+      return {
+        mx: ((a.x + b.x) / 2 - rect.left) * dpr,
+        my: ((a.y + b.y) / 2 - rect.top) * dpr,
+        dist: Math.max(1, Math.hypot(a.x - b.x, a.y - b.y) * dpr),
+      };
+    };
+    // Pinch pins the world point under the fingers and then moves that point's SCREEN
+    // position with them — one anchor drives both the zoom and the pan, so the map stays
+    // under the grip. No magnetic dive here: with two fingers on the glass the user is
+    // already saying exactly where they want to be.
+    const startPinch = () => {
+      const g = spread();
+      if (!g) return;
+      drag = null;
+      cam.fly = null;
+      pinch = { dist: g.dist };
+      const [wx, wy] = worldAt(g.mx, g.my);
+      cam.anchor = { mx: g.mx, my: g.my, wx, wy };
+    };
+
+    const endPointer = (e, tap) => {
+      if (!pointers.delete(e.pointerId)) return;
+      if (pinch) {
+        pinch = null;
+        if (pointers.size >= 2) {
+          startPinch();   // a spare finger lifted; the two that remain are still pinching
+        } else {
+          // Down to one finger: restart the pan from where the survivor actually is, or the
+          // map jumps by the gap between the two. It is still a drag, never a tap.
+          const rest = [...pointers.values()][0];
+          drag = rest ? { x: rest.x, y: rest.y, x0: rest.x, y0: rest.y, t0: 0, moved: true } : null;
+        }
+      } else {
+        const d = drag;
+        drag = null;
+        if (tap && d && !d.moved && performance.now() - d.t0 < TAP_MS) onClick(e);
+      }
+      if (e.pointerType !== "mouse") hideTip();   // no hover to keep the tooltip alive
+    };
+
     canvas.addEventListener("pointerdown", (e) => {
-      drag = { x: e.clientX, y: e.clientY, moved: false };
+      // A primary pointer is the FIRST finger of a gesture, so nothing else can legitimately
+      // still be down. Clearing here self-heals a pointercancel we never got (an OS gesture,
+      // browser chrome, a lost capture) — otherwise one leaked finger makes the next tap look
+      // like the second half of a pinch, and the map stops responding to touch entirely.
+      if (e.isPrimary) { pointers.clear(); pinch = null; drag = null; }
       canvas.setPointerCapture(e.pointerId);
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (pointers.size === 1) {
+        drag = { x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY, t0: performance.now(), moved: false };
+      } else if (pointers.size === 2) {
+        startPinch();
+      }
     });
     canvas.addEventListener("pointermove", (e) => {
+      if (pinch) {
+        if (!pointers.has(e.pointerId)) return;
+        pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        const g = spread();
+        if (!g) return;
+        // Fingers spreading by a factor of 2 is exactly one octave of zoom — log2 of the
+        // ratio IS the camera's unit, so pinch rides the same axis the wheel drives.
+        cam.zTarget = clampZ(cam.zTarget + Math.log2(g.dist / pinch.dist));
+        pinch.dist = g.dist;
+        cam.anchor.mx = g.mx; cam.anchor.my = g.my;
+        cam.fly = null;
+        return;
+      }
       onHover(e);
-      if (!drag) return;
+      if (!drag || !pointers.has(e.pointerId)) return;
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
       const dx = (e.clientX - drag.x) * dpr, dy = (e.clientY - drag.y) * dpr;
-      if (Math.abs(dx) + Math.abs(dy) > 3) drag.moved = true;
+      if (!drag.moved && Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) > TAP_SLOP) drag.moved = true;
       const s = scaleOf();
       cam.x -= dx / s; cam.y -= dy / s;
       cam.anchor = null; cam.fly = null;
       drag.x = e.clientX; drag.y = e.clientY;
     });
-    canvas.addEventListener("pointerup", (e) => {
-      const wasDrag = drag && drag.moved;
-      drag = null;
-      if (!wasDrag) onClick(e);
+    canvas.addEventListener("pointerup", (e) => endPointer(e, true));
+    canvas.addEventListener("pointercancel", (e) => endPointer(e, false));
+    // Capture can be taken away without a pointerup (an OS-level gesture, browser chrome).
+    // Whatever the cause, no gesture state may outlive the pointer that started it.
+    canvas.addEventListener("lostpointercapture", (e) => endPointer(e, false));
+    canvas.addEventListener("pointerleave", (e) => {
+      if (e.pointerType === "mouse" && !pointers.size) hideTip();
     });
-    canvas.addEventListener("pointerleave", () => { drag = null; hideTip(); });
 
     // --- group filter ------------------------------------------------------------
     const groupSel = wrap.querySelector(".df-group");
@@ -452,7 +546,11 @@ export class Deepfield {
     const panelInner = panel.querySelector(".df-panel-inner");
     const closePanel = () => panel.classList.remove("df-open");
     this._closePanel = closePanel;
-    panel.addEventListener("click", (e) => { if (e.target === panel) closePanel(); });
+    // Dismissed on pointerdown, not click. A tap opens the panel during the canvas's
+    // pointerup — and the compatibility click the browser fires afterwards is hit-tested
+    // fresh, so it lands on the backdrop that has just appeared under the finger and closes
+    // the panel again the instant it opened. A pointerdown can only be a deliberate one.
+    panel.addEventListener("pointerdown", (e) => { if (e.target === panel) closePanel(); });
 
     async function openPanel(i) {
       const node = nodeAt(i);
@@ -597,7 +695,9 @@ export class Deepfield {
           const s = scaleOf();
           cam.x = cam.anchor.wx - (cam.anchor.mx - W / 2) / s;
           cam.y = cam.anchor.wy - (cam.anchor.my - H / 2) / s;
-          if (Math.abs(cam.zTarget - cam.z) < 1e-3) cam.anchor = null;
+          // A pinch that is only translating has nothing left to smooth, but the anchor is
+          // what pans it — so it must survive until the fingers lift.
+          if (!pinch && Math.abs(cam.zTarget - cam.z) < 1e-3) cam.anchor = null;
         }
       }
       // Never lose the content: the camera centre stays inside the content box + margin.
