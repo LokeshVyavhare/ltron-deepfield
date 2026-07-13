@@ -74,6 +74,9 @@ a { color: var(--accent); }
 }
 .demo-map {
   height: min(72vh, 640px); min-height: 420px;
+  /* dvh tracks the viewport that's actually on screen — on mobile Safari/Chrome the URL bar
+     is inside 100vh, so a vh-sized map runs off the bottom until the bar retracts. */
+  height: min(72dvh, 640px);
   /* Without this, the canvas's own pixel-buffer size (which Deepfield sets from
      devicePixelRatio) becomes the grid item's content-based minimum width, growing the
      track past its 1fr share — which grows the canvas again on the next ResizeObserver
@@ -113,6 +116,9 @@ a { color: var(--accent); }
 .btn-block { width: 100%; margin-top: 10px; }
 .error { color: #ff6b6b; font-size: 12px; margin: 8px 0 0; }
 
+/* Desktop keeps the panel open beside the map, so the toggle has nothing to do there. */
+.panel-toggle { display: none; }
+
 /* --- how it works --------------------------------------------------------------- */
 .how { max-width: 1100px; margin: 60px auto; padding: 0 24px; }
 .how h2 { text-align: center; font-size: 24px; margin-bottom: 28px; }
@@ -139,8 +145,45 @@ a { color: var(--accent); }
 }
 
 /* --- responsive ------------------------------------------------------------------ */
+/* Below the two-column breakpoint the map takes the whole width and the config folds into
+   a toggle underneath it. Stacking a 500px-tall panel under the map would push the map off
+   the first screen — and the map is the entire pitch. */
 @media (max-width: 860px) {
-  .demo { grid-template-columns: 1fr; }
-  .panel { max-height: none; }
-  .demo-map { height: 60vh; }
+  .demo {
+    grid-template-columns: 1fr; margin: 24px auto; padding: 0 16px; gap: 12px;
+  }
+  .demo-map { height: min(64dvh, 560px); min-height: 340px; }
+  .panel { max-height: none; display: none; }
+  .panel.open { display: flex; }
+  .panel-toggle {
+    display: block; width: 100%; min-height: 48px;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+    color: var(--text); font: inherit; font-size: 14px; cursor: pointer;
+    padding: 12px 16px; text-align: left;
+  }
+  .panel-toggle::after { content: " ▾"; color: var(--muted); float: right; }
+  .panel-toggle[aria-expanded="true"]::after { content: " ▴"; }
+}
+
+/* Touch: every control the finger has to hit gets a 44px box, and every field a 16px font
+   (below that, iOS zooms the page on focus and the map ends up cropped off-screen). */
+@media (pointer: coarse) {
+  .panel select, .panel textarea, .install button, .btn { font-size: 16px; min-height: 44px; }
+  .panel textarea { min-height: 160px; }
+  .row input[type="range"] { height: 34px; }
+  .row input[type="checkbox"] { width: 22px; height: 22px; }
+  .row input[type="color"] { width: 56px; height: 34px; }
+}
+
+@media (max-width: 480px) {
+  .hero { padding: 36px 16px 28px; }
+  .hero h1 { font-size: 26px; }
+  .tagline { font-size: 15px; margin-bottom: 20px; }
+  .install { width: 100%; justify-content: space-between; }
+  .install code { font-size: 12px; }
+  .hero-actions .btn { flex: 1; text-align: center; }
+  .features { display: none; }   /* the tagline already says all four */
+  .how { margin: 40px auto; padding: 0 16px; }
+  .row { flex-wrap: wrap; }
+  .row input[type="range"] { width: 100%; }
 }

@@ -5,6 +5,13 @@
 
    Nothing here depends on a host stylesheet, and every selector is `df-` prefixed. */
 
+/* Scoped border-box, because the package promises to depend on no host stylesheet — and in a
+   host without the usual `* { box-sizing: border-box }` reset, every `width: 100%` here that
+   also has padding (the search field, the details panel) overflows its container by exactly
+   that padding. On a phone that is the difference between a panel that fits and one that
+   hangs off the screen. */
+.df-wrap, .df-wrap *, .df-wrap *::before, .df-wrap *::after { box-sizing: border-box; }
+
 .df-wrap {
   --df-bg: radial-gradient(120% 120% at 50% 0%, #10161f, #0b0e13);
   --df-panel: #171a21;
@@ -26,7 +33,11 @@
   font-family: inherit;
 }
 .df-wrap:fullscreen { width: 100vw; height: 100vh; margin: 0; border: none; border-radius: 0; }
+/* Mobile browsers shrink 100vh behind their own chrome; dvh is the height actually on screen. */
+@supports (height: 100dvh) { .df-wrap:fullscreen { height: 100dvh; } }
 
+/* touch-action:none is load-bearing: without it the browser claims every drag as a page
+   scroll and every pinch as a page zoom, and the map never sees the gesture at all. */
 .df-canvas { width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
 .df-canvas:active { cursor: grabbing; }
 
@@ -52,13 +63,16 @@
   position: absolute; top: 12px; left: 12px; right: 12px; z-index: 4;
   display: flex; flex-direction: column; gap: 8px; pointer-events: none;
 }
-.df-hud-row { display: flex; gap: 8px; align-items: center; }
+/* The padding is the room the home/fullscreen buttons occupy in the same corner. On a wide
+   map nothing reaches that far and the row looks untouched; on a narrow one the search box
+   shrinks instead of sliding underneath them. */
+.df-hud-row { display: flex; gap: 8px; align-items: center; padding-right: 88px; }
 .df-group, .df-search {
   pointer-events: auto; background: rgba(23, 26, 33, .92); color: var(--df-text);
   border: 1px solid var(--df-border); border-radius: 10px; padding: 8px 10px;
   font-size: 13px; font-family: inherit;
 }
-.df-group { max-width: 190px; }
+.df-group { max-width: 190px; min-width: 0; }
 .df-group:focus, .df-search:focus { outline: none; border-color: var(--df-accent); }
 .df-searchbox { position: relative; flex: 1; max-width: 340px; pointer-events: auto; }
 .df-search { width: 100%; padding: 8px 12px; }
@@ -131,7 +145,8 @@
 .df-panel-inner h3 { margin: 0 0 6px; font-size: 18px; }
 .df-panel-actions { margin: 12px 0; }
 .df-x {
-  position: absolute; top: 12px; right: 12px;
+  position: absolute; top: 4px; right: 4px;
+  width: 44px; height: 44px;   /* a thumb-sized target around a small glyph */
   background: none; border: none; color: var(--df-muted);
   font-size: 16px; cursor: pointer;
 }
@@ -160,3 +175,46 @@
 .df-empty { padding: 28px; text-align: center; color: var(--df-muted); }
 .df-empty-title { font-size: 15px; color: var(--df-text); margin-bottom: 4px; }
 .df-empty-hint { font-size: 13px; }
+
+/* --- touch ---------------------------------------------------------------------- */
+/* Keyed on the pointer, not the viewport: a tablet with a big screen still has fingers.
+   Hover styles are left alone — a coarse-pointer browser simply never applies them. */
+@media (pointer: coarse) {
+  .df-home, .df-fs { width: 44px; height: 44px; font-size: 19px; }
+  .df-fs { right: 12px; }
+  .df-home { right: 64px; }
+  .df-hud-row { padding-right: 104px; }
+  /* < 16px and iOS zooms the whole page in when the field takes focus, which leaves the
+     map cropped and the user stranded. This is the fix, not a style preference. */
+  .df-group, .df-search { font-size: 16px; padding: 10px 12px; }
+  .df-hit { padding: 12px; font-size: 14px; }
+  .df-item { padding: 12px 0; }
+  .df-btn { padding: 11px 14px; }
+  .df-crumb { font-size: 13px; }
+  .df-label { text-shadow: 0 1px 5px #000, 0 0 14px rgba(0, 0, 0, .95); }
+}
+
+/* --- narrow --------------------------------------------------------------------- */
+/* The map is the point, so on a phone the chrome gets out of its way: the details panel
+   becomes a bottom sheet (the map stays visible above it, and the backdrop still
+   dismisses), and the HUD stacks so the search box keeps a usable width. */
+@media (max-width: 560px) {
+  .df-hud { top: 8px; left: 8px; right: 8px; gap: 6px; }
+  .df-home, .df-fs { top: 8px; }
+  .df-fs { right: 8px; }
+  .df-group { max-width: 38%; }
+  .df-searchbox { max-width: none; }
+  /* The hint stays: on touch it is the only place the pinch gesture is advertised. */
+  .df-help { bottom: 8px; right: 10px; font-size: 10px; }
+
+  .df-panel-inner {
+    top: auto; left: 0; right: 0; bottom: 0;
+    width: 100%; max-height: 72%;
+    border-left: none; border-top: 1px solid var(--df-border);
+    border-radius: var(--df-radius) var(--df-radius) 0 0;
+    padding: 18px 16px calc(18px + env(safe-area-inset-bottom, 0px));
+    animation-name: df-rise;
+  }
+  .df-panel-inner h3 { padding-right: 40px; }   /* clear of the close button */
+}
+@keyframes df-rise { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }

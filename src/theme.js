@@ -47,6 +47,8 @@ export const DEFAULT_STRINGS = {
   voidText: "◎ nothing in view —",
   voidAction: "return to the map",
   help: "scroll = zoom · drag = pan · click = open",
+  /** Shown in place of `help` on touch devices, which have neither a wheel nor a click. */
+  helpTouch: "pinch = zoom · drag = pan · tap = open",
   loading: "Loading…",
   emptyTitle: "Nothing to map.",
   emptyHint: "",
